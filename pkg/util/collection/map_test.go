@@ -1,4 +1,4 @@
-package util_test
+package collection_test
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go-kit/pkg/util"
+	"go-kit/pkg/util/collection"
 )
 
 func basicHasher[K comparable](value K) K {
@@ -25,13 +25,13 @@ func testBasicTypes[T comparable](convert fromInt[T]) {
 	typeName := reflect.TypeOf(obj).Name()
 
 	Describe(fmt.Sprintf("It can work with type [%s].", typeName), func() {
-		var mapForTest util.Map[T, T]
+		var mapForTest collection.Map[T, T]
 
 		BeforeEach(func() {
-			mapForTest = util.NewMap[T, T, T](basicHasher[T], basicEquator[T])
+			mapForTest = collection.NewMap[T, T, T](basicHasher[T], basicEquator[T])
 		})
 
-		It("returns 'existing=false' when the key is nonexistent.", func() {
+		It("returns 'existing=false' when the Key is nonexistent.", func() {
 			_, existing := mapForTest.Get(convert(0))
 			Expect(existing).To(BeFalse())
 
@@ -46,7 +46,7 @@ func testBasicTypes[T comparable](convert fromInt[T]) {
 			Expect(value).To(Equal(convert(2)))
 			Expect(existing).To(BeTrue())
 
-			// If there are multiple keys, won't get a wrong value
+			// If there are multiple keys, won't get a wrong Value
 			mapForTest.Put(convert(0), convert(0))
 			value, existing = mapForTest.Get(convert(1))
 			Expect(value).To(Equal(convert(2)))
@@ -61,7 +61,7 @@ func testBasicTypes[T comparable](convert fromInt[T]) {
 			Expect(existing).To(BeTrue())
 		})
 
-		It("can indicate if the key is already existent when it puts. If so, it returns the old value.", func() {
+		It("can indicate if the Key is already existent when it puts. If so, it returns the old Value.", func() {
 			mapForTest.Put(convert(1), convert(0))
 			oldValue, existing := mapForTest.Put(convert(1), convert(1))
 			Expect(oldValue).To(Equal(convert(0)))
@@ -86,7 +86,7 @@ func testBasicTypes[T comparable](convert fromInt[T]) {
 			Expect(value).To(Equal(convert(3)))
 		})
 
-		It("can show if it contains a specified key.", func() {
+		It("can show if it contains a specified Key.", func() {
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
 			mapForTest.Put(convert(1), convert(2))
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeTrue())
@@ -97,7 +97,7 @@ func testBasicTypes[T comparable](convert fromInt[T]) {
 			mapForTest.Remove(convert(1))
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
 
-			// Make sure the "value" won't make containsKey returns true
+			// Make sure the "Value" won't make containsKey returns true
 			mapForTest.Put(convert(0), convert(3))
 			Expect(mapForTest.ContainsKey(convert(3))).To(BeFalse())
 			// Make sure it works when it contains multiple keys
@@ -156,10 +156,10 @@ var _ = Describe("Map", func() {
 	})
 
 	Describe("can work with other types.", func() {
-		var mapForTest util.Map[*idValue, int]
+		var mapForTest collection.Map[*idValue, int]
 
 		BeforeEach(func() {
-			mapForTest = util.NewMap[*idValue, int, int]((*idValue).hash, (*idValue).equals)
+			mapForTest = collection.NewMap[*idValue, int, int]((*idValue).hash, (*idValue).equals)
 		})
 
 		It("can contain keys that have the different hash codes.", func() {
@@ -198,9 +198,9 @@ var _ = Describe("Map", func() {
 
 		It("can does not contain keys that have never been put.", func() {
 			t1 := &idValue{id: 1, value: 1}
-			// different key but same hash code
+			// different Key but same hash code
 			t2 := &idValue{id: 1, value: 2}
-			// different key and different hash code
+			// different Key and different hash code
 			t3 := &idValue{id: 2, value: 2}
 			mapForTest.Put(t1, 0)
 
@@ -231,7 +231,7 @@ var _ = Describe("Map", func() {
 			Expect(value).To(Equal(2))
 		})
 
-		It("won't panic when trying to remove an nonexistent key.", func() {
+		It("won't panic when trying to remove an nonexistent Key.", func() {
 			t1 := &idValue{id: 1, value: 1}
 			_, existing := mapForTest.Remove(t1)
 			Expect(existing).To(BeFalse())
@@ -295,6 +295,92 @@ var _ = Describe("Map", func() {
 			Expect(mapForTest.Len()).To(Equal(1))
 			mapForTest.Remove(t4)
 			Expect(mapForTest.Len()).To(Equal(0))
+		})
+	})
+
+	Describe("implements Collection interface.", func() {
+		var collectionForTest collection.Collection[collection.Pair[int, int]]
+		var mapForTest collection.Map[int, int]
+
+		BeforeEach(func() {
+			mapForTest = collection.NewMap[int, int, int](basicHasher[int], basicEquator[int])
+			collectionForTest = mapForTest
+		})
+
+		It("can add Pairs.", func() {
+			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			collectionForTest.Add(p)
+			Expect(collectionForTest.Has(p)).To(BeTrue())
+			value, existing := mapForTest.Get(1)
+			Expect(existing).To(BeTrue())
+			Expect(value).To(Equal(2))
+
+			// overwrite
+			p = collection.Pair[int, int]{Key: 1, Value: 1}
+			collectionForTest.Add(p)
+			Expect(collectionForTest.Has(p)).To(BeTrue())
+			value, existing = mapForTest.Get(1)
+			Expect(existing).To(BeTrue())
+			Expect(value).To(Equal(1))
+		})
+
+		It("can work with RemoveFirst.", func() {
+			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			collectionForTest.Add(p)
+			collectionForTest.RemoveFirst(p)
+			Expect(collectionForTest.Has(p)).To(BeFalse())
+
+			// Won't panic
+			collectionForTest.RemoveFirst(p)
+		})
+
+		It("can pop items.", func() {
+			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			collectionForTest.Add(p)
+			pair, existing := collectionForTest.Pop()
+			Expect(existing).To(BeTrue())
+			Expect(pair.Key).To(Equal(1))
+			Expect(pair.Value).To(Equal(2))
+			pair, existing = collectionForTest.Pop()
+			Expect(existing).To(BeFalse())
+
+			// Work with multiple items
+			collectionForTest.Add(p)
+			p = collection.Pair[int, int]{Key: 2, Value: 2}
+			collectionForTest.Add(p)
+			pair, existing = collectionForTest.Pop()
+			Expect(existing).To(BeTrue())
+			Expect(pair.Key).To(Or(Equal(1), Equal(2)))
+			Expect(pair.Value).To(Equal(2))
+			pair, existing = collectionForTest.Pop()
+			Expect(existing).To(BeTrue())
+			Expect(pair.Key).To(Or(Equal(1), Equal(2)))
+			Expect(pair.Value).To(Equal(2))
+			pair, existing = collectionForTest.Pop()
+			Expect(existing).To(BeFalse())
+		})
+
+		It("can return the number of items it contains.", func() {
+			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			collectionForTest.Add(p)
+			Expect(collectionForTest.Len()).To(Equal(1))
+
+			p = collection.Pair[int, int]{Key: 1, Value: 3}
+			collectionForTest.Add(p)
+			Expect(collectionForTest.Len()).To(Equal(1))
+
+			p = collection.Pair[int, int]{Key: 2, Value: 3}
+			collectionForTest.Add(p)
+			Expect(collectionForTest.Len()).To(Equal(2))
+
+			collectionForTest.RemoveFirst(p)
+			Expect(collectionForTest.Len()).To(Equal(1))
+
+			collectionForTest.RemoveFirst(p)
+			Expect(collectionForTest.Len()).To(Equal(1))
+
+			collectionForTest.Pop()
+			Expect(collectionForTest.Len()).To(Equal(0))
 		})
 	})
 })
