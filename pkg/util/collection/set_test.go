@@ -15,7 +15,7 @@ func testBasicTypesForSet[T comparable](convert fromInt[T]) {
 	typeName := reflect.TypeOf(obj).Name()
 
 	Describe(fmt.Sprintf("It can work with type [%s].", typeName), func() {
-		var setForTest collection.Collection[T]
+		var setForTest collection.Set[T]
 
 		BeforeEach(func() {
 			setForTest = collection.NewSet[T](basicHasher[T], basicEquator[T])
@@ -103,7 +103,7 @@ var _ = Describe("Set", func() {
 	})
 
 	Describe("can work with other types.", func() {
-		var setForTest collection.Collection[*idValue]
+		var setForTest collection.Set[*idValue]
 
 		BeforeEach(func() {
 			setForTest = collection.NewSet[*idValue]((*idValue).hash, (*idValue).equals)
