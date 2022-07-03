@@ -20,7 +20,7 @@ func basicEquator[K comparable](first, second K) bool {
 
 type fromInt[T comparable] func(int) T
 
-func testBasicTypes[T comparable](convert fromInt[T]) {
+func testBasicTypesForMap[T comparable](convert fromInt[T]) {
 	var obj T
 	typeName := reflect.TypeOf(obj).Name()
 
@@ -138,19 +138,19 @@ func (i *idValue) equals(other *idValue) bool {
 
 var _ = Describe("Map", func() {
 	Describe("can work with basic types.", func() {
-		testBasicTypes[int](func(value int) int {
+		testBasicTypesForMap[int](func(value int) int {
 			return value
 		})
 
-		testBasicTypes[float32](func(value int) float32 {
+		testBasicTypesForMap[float32](func(value int) float32 {
 			return float32(value)
 		})
 
-		testBasicTypes[string](func(value int) string {
+		testBasicTypesForMap[string](func(value int) string {
 			return strconv.Itoa(value)
 		})
 
-		testBasicTypes[bool](func(value int) bool {
+		testBasicTypesForMap[bool](func(value int) bool {
 			return value != 0
 		})
 	})

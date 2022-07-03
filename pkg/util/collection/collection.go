@@ -1,6 +1,7 @@
 package collection
 
-// Interface is describing a collection.
+// Collection To avoid Value copy, you may want T to be pointer types.
+//  However, if T is a pointer type, we must make sure that the hash code remains the same.
 type Collection[T any] interface {
 	Add(item T)
 	RemoveFirst(item T) bool
