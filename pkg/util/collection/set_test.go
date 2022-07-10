@@ -80,6 +80,18 @@ func testBasicTypesForSet[T comparable](convert fromInt[T]) {
 			setForTest.Pop()
 			Expect(setForTest.Len()).To(Equal(0))
 		})
+
+		It("can clear what it puts.", func() {
+			setForTest.Add(convert(0))
+			setForTest.Add(convert(1))
+			setForTest.Clear()
+			Expect(setForTest.Len()).To(Equal(0))
+
+			setForTest.Add(convert(0))
+			Expect(setForTest.Has(convert(0))).To(BeTrue())
+			Expect(setForTest.Has(convert(1))).To(BeFalse())
+		})
+
 	})
 }
 

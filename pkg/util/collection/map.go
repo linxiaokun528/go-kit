@@ -1,6 +1,6 @@
 package collection
 
-type Equator[T any] func(original, new T) bool
+type Equaler[T any] func(original, new T) bool
 type Hasher[T any, C comparable] func(obj T) C
 
 type Pair[K any, V any] struct {
@@ -11,13 +11,9 @@ type Pair[K any, V any] struct {
 // Map To avoid Value copy, you may want K, V to be pointer types.
 //  However, if Key is a pointer type, we must make sure that the hash code remains the same.
 type Map[K any, V any] interface {
-	Add(pair Pair[K, V])
-	// RemoveFirst For the default implementation, RemoveFirst(pair) equals Remove(pair.Key).
-	//  We are not able to determine if the value is equal or not, unless an equator for value is passed.
-	RemoveFirst(pair Pair[K, V]) bool
-	Pop() (pair Pair[K, V], existing bool)
-	Has(p Pair[K, V]) bool
-	Len() int
+	// Collection For the default implementation, Collection.RemoveFirst(pair) equals Remove(pair.Key).
+	//  We are not able to determine if the value is equal or not, unless an equaler for value is passed.
+	Collection[Pair[K, V]]
 
 	ContainsKey(key K) bool
 	Put(key K, value V) (old V, existing bool)
@@ -25,11 +21,11 @@ type Map[K any, V any] interface {
 	Remove(key K) (old V, existing bool)
 }
 
-func NewMap[K any, V any, C comparable](hasher Hasher[K, C], equator Equator[K]) Map[K, V] {
+func NewMap[K any, V any, C comparable](hasher Hasher[K, C], equaler Equaler[K]) Map[K, V] {
 	return &mapImpl[K, V, C]{
 		data:    map[C][]*Pair[K, V]{},
 		hasher:  hasher,
-		equator: equator,
+		equaler: equaler,
 		size:    0,
 	}
 }
@@ -37,12 +33,19 @@ func NewMap[K any, V any, C comparable](hasher Hasher[K, C], equator Equator[K])
 type mapImpl[K any, V any, C comparable] struct {
 	data    map[C][]*Pair[K, V]
 	hasher  Hasher[K, C]
-	equator Equator[K]
+	equaler Equaler[K]
 	size    int
 }
 
-func (m *mapImpl[K, V, C]) Add(pair Pair[K, V]) {
-	m.Put(pair.Key, pair.Value)
+func (m *mapImpl[K, V, C]) Add(pair Pair[K, V]) (oldItem Pair[K, V], replaced bool) {
+	oldValue, replaced := m.Put(pair.Key, pair.Value)
+	if replaced {
+		oldItem.Key = pair.Key
+		oldItem.Value = oldValue
+		return
+	}
+
+	return
 }
 
 func (m *mapImpl[K, V, C]) RemoveFirst(pair Pair[K, V]) bool {
@@ -71,7 +74,7 @@ func (m *mapImpl[K, V, C]) Put(key K, value V) (old V, existing bool) {
 	pairs, exists := m.data[hash]
 	if exists {
 		for _, pair := range pairs {
-			if m.equator(key, pair.Key) {
+			if m.equaler(key, pair.Key) {
 				old = pair.Value
 				pair.Key = key
 				pair.Value = value
@@ -105,7 +108,7 @@ func (m *mapImpl[K, V, C]) Get(key K) (value V, existing bool) {
 	}
 
 	for _, pair := range pairs {
-		if m.equator(key, pair.Key) {
+		if m.equaler(key, pair.Key) {
 			return pair.Value, true
 		}
 	}
@@ -132,7 +135,7 @@ func (m *mapImpl[K, V, C]) Remove(key K) (old V, existing bool) {
 	}
 
 	for i, kvPair := range pairs {
-		if m.equator(key, kvPair.Key) {
+		if m.equaler(key, kvPair.Key) {
 			if len(pairs) == 1 {
 				delete(m.data, hash)
 			} else {
@@ -147,4 +150,9 @@ func (m *mapImpl[K, V, C]) Remove(key K) (old V, existing bool) {
 
 	existing = false
 	return
+}
+
+func (m *mapImpl[K, V, C]) Clear() {
+	m.data = map[C][]*Pair[K, V]{}
+	m.size = 0
 }

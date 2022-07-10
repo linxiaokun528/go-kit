@@ -86,6 +86,17 @@ func testBasicTypesForMap[T comparable](convert fromInt[T]) {
 			Expect(value).To(Equal(convert(3)))
 		})
 
+		It("can clear what it puts.", func() {
+			mapForTest.Put(convert(0), convert(2))
+			mapForTest.Put(convert(1), convert(0))
+			mapForTest.Clear()
+			Expect(mapForTest.Len()).To(Equal(0))
+
+			mapForTest.Put(convert(0), convert(2))
+			Expect(mapForTest.ContainsKey(convert(0))).To(BeTrue())
+			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
+		})
+
 		It("can show if it contains a specified Key.", func() {
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
 			mapForTest.Put(convert(1), convert(2))

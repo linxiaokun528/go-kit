@@ -10,9 +10,9 @@ type emptyType struct{}
 
 var empty emptyType
 
-func NewSet[T any, C comparable](hasher Hasher[T, C], equator Equator[T]) Set[T] {
+func NewSet[T any, C comparable](hasher Hasher[T, C], equaler Equaler[T]) Set[T] {
 	return &set[T]{
-		data: NewMap[T, emptyType, C](hasher, equator),
+		data: NewMap[T, emptyType, C](hasher, equaler),
 	}
 }
 
@@ -20,8 +20,12 @@ type set[T any] struct {
 	data Map[T, emptyType]
 }
 
-func (s *set[T]) Add(item T) {
-	s.data.Put(item, empty)
+func (s *set[T]) Add(item T) (oldItem T, replaced bool) {
+	_, replaced = s.data.Put(item, empty)
+	if !replaced {
+		return
+	}
+	return item, true
 }
 
 func (s *set[T]) RemoveFirst(item T) bool {
@@ -44,4 +48,8 @@ func (s *set[T]) Pop() (item T, existing bool) {
 
 func (s *set[T]) Len() int {
 	return s.data.Len()
+}
+
+func (s *set[T]) Clear() {
+	s.data.Clear()
 }

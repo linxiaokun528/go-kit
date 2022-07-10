@@ -3,11 +3,13 @@ package collection
 // Collection To avoid Value copy, you may want T to be pointer types.
 //  However, if T is a pointer type, we must make sure that the hash code remains the same.
 type Collection[T any] interface {
-	Add(item T)
+	// Add for some collections like set/map, we need to return the replaced item
+	Add(item T) (oldItem T, replaced bool)
 	RemoveFirst(item T) bool
 	Pop() (T, bool)
 	Has(item T) bool
 	Len() int
+	Clear()
 }
 
 //type EnhancedCollection[T any] struct {
