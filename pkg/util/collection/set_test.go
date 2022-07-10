@@ -7,18 +7,19 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go-kit/pkg/util/collection"
+	. "go-kit/pkg/util/collection"
 )
 
-func testBasicTypesForSet[T comparable](convert fromInt[T]) {
+func testBasicTypesForSet[T comparable](setType setType, convert fromInt[T]) {
 	var obj T
 	typeName := reflect.TypeOf(obj).Name()
 
 	Describe(fmt.Sprintf("It can work with type [%s].", typeName), func() {
-		var setForTest collection.Set[T]
+		var setForTest Set[T]
 
 		BeforeEach(func() {
-			setForTest = collection.NewSet[T](basicHasher[T], basicEquator[T])
+			// use a fake comparator here. We don't really need a comparator in this test
+			setForTest = createSet[T, T](setType, basicHasher[T], basicEquator[T], fakeComparator[T])
 		})
 
 		It("can check if an item is existent.", func() {
@@ -95,30 +96,53 @@ func testBasicTypesForSet[T comparable](convert fromInt[T]) {
 	})
 }
 
-var _ = Describe("Set", func() {
+type setType string
+
+const (
+	defaultSet    = "defaultSet"
+	prioritySet   = "prioritySet"
+	threadSafeSet = "threadSafeSet"
+)
+
+func createSet[T any, C comparable](setType setType, hasher Hasher[T, C],
+	equaler Equaler[T], comparator Comparator[T]) Set[T] {
+	if setType == defaultSet {
+		return NewSet[T, C](hasher, equaler)
+	} else if setType == prioritySet {
+		return NewPrioritySet[T, C](comparator, hasher, equaler)
+	} else if setType == threadSafeSet {
+		return NewThreadSafeSet[T, C](hasher, equaler)
+	}
+
+	panic("Unsupported set type: " + setType)
+}
+
+// I know it's ugly, but you can't pass a parameter like `create func[T any]() Set[T]`, which will have an error
+// "Function type cannot have type parameters"
+func testSet(setType setType) {
 	Describe("can work with basic types.", func() {
-		testBasicTypesForSet[int](func(value int) int {
+		testBasicTypesForSet[int](setType, func(value int) int {
 			return value
 		})
 
-		testBasicTypesForSet[float32](func(value int) float32 {
+		testBasicTypesForSet[float32](setType, func(value int) float32 {
 			return float32(value)
 		})
 
-		testBasicTypesForSet[string](func(value int) string {
+		testBasicTypesForSet[string](setType, func(value int) string {
 			return strconv.Itoa(value)
 		})
 
-		testBasicTypesForSet[bool](func(value int) bool {
+		testBasicTypesForSet[bool](setType, func(value int) bool {
 			return value != 0
 		})
 	})
 
 	Describe("can work with other types.", func() {
-		var setForTest collection.Set[*idValue]
+		var setForTest Set[*idValue]
 
 		BeforeEach(func() {
-			setForTest = collection.NewSet[*idValue]((*idValue).hash, (*idValue).equals)
+			setForTest = createSet[*idValue, int](setType, (*idValue).hash, (*idValue).equals, (*idValue).lessThan)
 		})
 
 		It("can contain items that have the different hash codes.", func() {
@@ -207,4 +231,12 @@ var _ = Describe("Set", func() {
 			Expect(setForTest.Len()).To(Equal(0))
 		})
 	})
+}
+
+var _ = Describe("Default set", func() {
+	testSet(defaultSet)
+})
+
+var _ = Describe("ThreadSafeSet", func() {
+	testSet(threadSafeSet)
 })

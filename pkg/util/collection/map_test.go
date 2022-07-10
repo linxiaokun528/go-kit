@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go-kit/pkg/util/collection"
+	. "go-kit/pkg/util/collection"
 )
 
 func basicHasher[K comparable](value K) K {
@@ -18,17 +18,22 @@ func basicEquator[K comparable](first, second K) bool {
 	return first == second
 }
 
+func fakeComparator[K comparable](_, _ K) bool {
+	return true
+}
+
 type fromInt[T comparable] func(int) T
 
-func testBasicTypesForMap[T comparable](convert fromInt[T]) {
+func testBasicTypesForMap[T comparable](mapType mapType, convert fromInt[T]) {
 	var obj T
 	typeName := reflect.TypeOf(obj).Name()
 
 	Describe(fmt.Sprintf("It can work with type [%s].", typeName), func() {
-		var mapForTest collection.Map[T, T]
+		var mapForTest Map[T, T]
 
 		BeforeEach(func() {
-			mapForTest = collection.NewMap[T, T, T](basicHasher[T], basicEquator[T])
+			// use a fake comparator here. We don't really need a comparator in this test
+			mapForTest = createMap[T, T, T](mapType, basicHasher[T], basicEquator[T], fakeComparator[T])
 		})
 
 		It("returns 'existing=false' when the Key is nonexistent.", func() {
@@ -147,30 +152,52 @@ func (i *idValue) equals(other *idValue) bool {
 	return i.id == other.id && i.value == other.value
 }
 
-var _ = Describe("Map", func() {
+func (i *idValue) lessThan(other *idValue) bool {
+	return i.id < other.id
+}
+
+type mapType string
+
+const (
+	defaultMap  = "defaultMap"
+	priorityMap = "priorityMap"
+)
+
+func createMap[K any, V any, C comparable](mapType mapType, hasher Hasher[K, C],
+	equaler Equaler[K], comparator Comparator[K]) Map[K, V] {
+	if mapType == defaultMap {
+		return NewMap[K, V, C](hasher, equaler)
+	} else if mapType == priorityMap {
+		return NewPriorityMap[K, V, C](comparator, hasher, equaler)
+	}
+
+	panic("Unsupported set type: " + mapType)
+}
+
+func testMap(mapType mapType) {
 	Describe("can work with basic types.", func() {
-		testBasicTypesForMap[int](func(value int) int {
+		testBasicTypesForMap[int](mapType, func(value int) int {
 			return value
 		})
 
-		testBasicTypesForMap[float32](func(value int) float32 {
+		testBasicTypesForMap[float32](mapType, func(value int) float32 {
 			return float32(value)
 		})
 
-		testBasicTypesForMap[string](func(value int) string {
+		testBasicTypesForMap[string](mapType, func(value int) string {
 			return strconv.Itoa(value)
 		})
 
-		testBasicTypesForMap[bool](func(value int) bool {
+		testBasicTypesForMap[bool](mapType, func(value int) bool {
 			return value != 0
 		})
 	})
 
 	Describe("can work with other types.", func() {
-		var mapForTest collection.Map[*idValue, int]
+		var mapForTest Map[*idValue, int]
 
 		BeforeEach(func() {
-			mapForTest = collection.NewMap[*idValue, int, int]((*idValue).hash, (*idValue).equals)
+			mapForTest = createMap[*idValue, int, int](mapType, (*idValue).hash, (*idValue).equals, (*idValue).lessThan)
 		})
 
 		It("can contain keys that have the different hash codes.", func() {
@@ -310,16 +337,16 @@ var _ = Describe("Map", func() {
 	})
 
 	Describe("implements Collection interface.", func() {
-		var collectionForTest collection.Collection[collection.Pair[int, int]]
-		var mapForTest collection.Map[int, int]
+		var collectionForTest Collection[Pair[int, int]]
+		var mapForTest Map[int, int]
 
 		BeforeEach(func() {
-			mapForTest = collection.NewMap[int, int, int](basicHasher[int], basicEquator[int])
+			mapForTest = NewMap[int, int, int](basicHasher[int], basicEquator[int])
 			collectionForTest = mapForTest
 		})
 
 		It("can add Pairs.", func() {
-			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Has(p)).To(BeTrue())
 			value, existing := mapForTest.Get(1)
@@ -327,7 +354,7 @@ var _ = Describe("Map", func() {
 			Expect(value).To(Equal(2))
 
 			// overwrite
-			p = collection.Pair[int, int]{Key: 1, Value: 1}
+			p = Pair[int, int]{Key: 1, Value: 1}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Has(p)).To(BeTrue())
 			value, existing = mapForTest.Get(1)
@@ -336,7 +363,7 @@ var _ = Describe("Map", func() {
 		})
 
 		It("can work with RemoveFirst.", func() {
-			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
 			collectionForTest.RemoveFirst(p)
 			Expect(collectionForTest.Has(p)).To(BeFalse())
@@ -346,7 +373,7 @@ var _ = Describe("Map", func() {
 		})
 
 		It("can pop items.", func() {
-			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
 			pair, existing := collectionForTest.Pop()
 			Expect(existing).To(BeTrue())
@@ -357,7 +384,7 @@ var _ = Describe("Map", func() {
 
 			// Work with multiple items
 			collectionForTest.Add(p)
-			p = collection.Pair[int, int]{Key: 2, Value: 2}
+			p = Pair[int, int]{Key: 2, Value: 2}
 			collectionForTest.Add(p)
 			pair, existing = collectionForTest.Pop()
 			Expect(existing).To(BeTrue())
@@ -372,15 +399,15 @@ var _ = Describe("Map", func() {
 		})
 
 		It("can return the number of items it contains.", func() {
-			p := collection.Pair[int, int]{Key: 1, Value: 2}
+			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Len()).To(Equal(1))
 
-			p = collection.Pair[int, int]{Key: 1, Value: 3}
+			p = Pair[int, int]{Key: 1, Value: 3}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Len()).To(Equal(1))
 
-			p = collection.Pair[int, int]{Key: 2, Value: 3}
+			p = Pair[int, int]{Key: 2, Value: 3}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Len()).To(Equal(2))
 
@@ -394,4 +421,8 @@ var _ = Describe("Map", func() {
 			Expect(collectionForTest.Len()).To(Equal(0))
 		})
 	})
+}
+
+var _ = Describe("DefaultMap", func() {
+	testMap(defaultMap)
 })
