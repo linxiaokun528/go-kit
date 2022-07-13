@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go-kit/pkg/util"
-	"gopkg.in/fatih/set.v0"
+	"go-kit/pkg/util/collection"
 )
 
 type loopFuncHelper struct {
@@ -209,7 +209,7 @@ func newInfiniteProducer() *producer {
 }
 
 type consumer struct {
-	results set.Interface
+	results collection.Set[int]
 }
 
 func (c *consumer) consume(product int, ctx context.Context) {
@@ -218,16 +218,16 @@ func (c *consumer) consume(product int, ctx context.Context) {
 
 func (c *consumer) getResults() []int {
 	var results []int
-	c.results.Each(func(i interface{}) bool {
-		results = append(results, i.(int))
-		return true
-	})
+	for value, existing := c.results.Pop(); existing; value, existing = c.results.Pop() {
+		results = append(results, value)
+	}
 	sort.Ints(results)
 	return results
 }
 
 func newConsumer() *consumer {
-	return &consumer{results: set.New(set.ThreadSafe)}
+	return &consumer{results: collection.NewThreadSafeSet[int, int](func(value int) int { return value },
+		func(t1, t2 int) bool { return t1 == t2 })}
 }
 
 var _ = Describe("ParallelConsumingProcessor", func() {
@@ -298,7 +298,7 @@ var _ = Describe("ParallelConsumingProcessor", func() {
 				processor.Start(10, ctx)
 				close(stopCh)
 			}()
-			Eventually(consumer.results.IsEmpty()).ShouldNot(BeFalse())
+			Eventually(consumer.results.Len()).Should(Equal(0))
 			cancelFunc()
 			Eventually(stopCh).Should(BeClosed())
 			values := consumer.getResults()

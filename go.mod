@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
-	gopkg.in/fatih/set.v0 v0.2.1
+	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
 )
 
 require (

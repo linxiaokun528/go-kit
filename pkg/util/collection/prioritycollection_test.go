@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -150,7 +149,7 @@ func testCollection[T any](c PriorityCollection[T], array []T, comparator Compar
 }
 
 var _ = BeforeSuite(func() {
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(GinkgoRandomSeed())
 })
 
 var _ = Describe("PriorityCollection should be tested multiple times.", func() {
