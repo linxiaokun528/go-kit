@@ -128,10 +128,16 @@ func testCollection[T any](c PriorityCollection[T], array []T, comparator Compar
 	var top T
 	if len(array) > 0 {
 		top = c.Peek()
+		top2, exists := c.TryPeek()
+		Expect(top2).To(Equal(top))
+		Expect(exists).To(BeTrue())
+	} else {
+		_, exists := c.TryPeek()
+		Expect(exists).To(BeFalse())
 	}
 
 	actual := []T{}
-	for value, existing := c.Pop(); existing; value, existing = c.Pop() {
+	for value, exists := c.TryPop(); exists; value, exists = c.TryPop() {
 		actual = append(actual, value)
 	}
 

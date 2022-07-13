@@ -54,13 +54,13 @@ func (s *set[T]) Has(item T) bool {
 	return s.data.ContainsKey(item)
 }
 
-func (s *set[T]) Pop() (item T, existing bool) {
-	pair, existing := s.data.Pop()
-	if !existing {
+func (s *set[T]) TryPop() (item T, exists bool) {
+	pair, exists := s.data.TryPop()
+	if !exists {
 		return
 	}
 
-	return pair.Key, existing
+	return pair.Key, exists
 }
 
 func (s *set[T]) Len() int {
@@ -104,11 +104,11 @@ func (t *threadSafeSet[T]) Has(item T) bool {
 	return t.s.Has(item)
 }
 
-func (t *threadSafeSet[T]) Pop() (item T, existing bool) {
+func (t *threadSafeSet[T]) TryPop() (item T, exists bool) {
 	t.l.Lock()
 	defer t.l.Unlock()
 
-	return t.s.Pop()
+	return t.s.TryPop()
 }
 
 func (t *threadSafeSet[T]) Len() int {

@@ -10,6 +10,7 @@ type Comparator[T any] func(first, second T) bool
 type PriorityCollection[T any] interface {
 	Collection[T]
 	Peek() T
+	TryPeek() (T, bool)
 }
 
 type PriorityQueue[T any] interface {
@@ -122,11 +123,20 @@ func (pq *priorityQueue[T]) Has(item T) bool {
 	return false
 }
 
-func (pq *priorityQueue[T]) Peek() T {
+func (pq *priorityQueue[T]) TryPeek() (top T, exists bool) {
 	if len(pq.helper.entries) == 0 {
-		panic("Peek from an empty priorityQueue.")
+		exists = false
+		return
 	}
-	return pq.helper.entries[0].key
+	return pq.helper.entries[0].key, true
+}
+
+func (pq *priorityQueue[T]) Peek() T {
+	top, exists := pq.TryPeek()
+	if !exists {
+		panic("Peek from an empty PriorityCollection.")
+	}
+	return top
 }
 
 func (pq *priorityQueue[T]) Len() int {
@@ -139,9 +149,9 @@ func (pq *priorityQueue[T]) Add(item T) (oldItem T, replaced bool) {
 	return
 }
 
-func (pq *priorityQueue[T]) Pop() (item T, existing bool) {
+func (pq *priorityQueue[T]) TryPop() (item T, exists bool) {
 	if pq.Len() <= 0 {
-		existing = false
+		exists = false
 		return
 	}
 
@@ -171,10 +181,10 @@ func (p *priorityMap[K, V]) ContainsKey(key K) bool {
 	return p.knownEntries.ContainsKey(key)
 }
 
-func (p *priorityMap[K, V]) Put(key K, value V) (old V, existing bool) {
-	helperEntry, existing := p.knownEntries.Get(key)
+func (p *priorityMap[K, V]) Put(key K, value V) (old V, exists bool) {
+	helperEntry, exists := p.knownEntries.Get(key)
 
-	if existing {
+	if exists {
 		old = helperEntry.value
 		helperEntry.key = key
 		helperEntry.value = value
@@ -190,17 +200,17 @@ func (p *priorityMap[K, V]) Put(key K, value V) (old V, existing bool) {
 	}
 }
 
-func (p *priorityMap[K, V]) Get(key K) (value V, existing bool) {
-	helperEntry, existing := p.knownEntries.Get(key)
-	if existing {
+func (p *priorityMap[K, V]) Get(key K) (value V, exists bool) {
+	helperEntry, exists := p.knownEntries.Get(key)
+	if exists {
 		value = helperEntry.value
 	}
 	return
 }
 
-func (p *priorityMap[K, V]) Remove(key K) (old V, existing bool) {
-	helperEntry, existing := p.knownEntries.Remove(key)
-	if existing {
+func (p *priorityMap[K, V]) Remove(key K) (old V, exists bool) {
+	helperEntry, exists := p.knownEntries.Remove(key)
+	if exists {
 		heap.Remove(p.helper, helperEntry.index)
 		old = helperEntry.value
 	}
@@ -219,9 +229,9 @@ func (p *priorityMap[K, V]) Add(pair Pair[K, V]) (oldItem Pair[K, V], replaced b
 	return
 }
 
-func (p *priorityMap[K, V]) Pop() (item Pair[K, V], existing bool) {
+func (p *priorityMap[K, V]) TryPop() (item Pair[K, V], exists bool) {
 	if p.Len() <= 0 {
-		existing = false
+		exists = false
 		return
 	}
 
@@ -232,14 +242,23 @@ func (p *priorityMap[K, V]) Pop() (item Pair[K, V], existing bool) {
 	return item, true
 }
 
-func (p *priorityMap[K, V]) Peek() (item Pair[K, V]) {
+func (p *priorityMap[K, V]) TryPeek() (item Pair[K, V], exists bool) {
 	if len(p.helper.entries) == 0 {
-		panic("Peek from an empty priorityQueue.")
+		exists = false
+		return
 	}
 
 	item.Key = p.helper.entries[0].key
 	item.Value = p.helper.entries[0].value
-	return item
+	return item, true
+}
+
+func (pq *priorityMap[K, V]) Peek() Pair[K, V] {
+	top, exists := pq.TryPeek()
+	if !exists {
+		panic("Peek from an empty PriorityCollection.")
+	}
+	return top
 }
 
 func (p *priorityMap[K, V]) Len() int {
@@ -280,4 +299,10 @@ func (s *prioritySet[T]) ToArray() []T {
 func (s *prioritySet[T]) Peek() T {
 	priorityMap := s.set.data.(*priorityMap[T, emptyType])
 	return priorityMap.Peek().Key
+}
+
+func (s *prioritySet[T]) TryPeek() (item T, exists bool) {
+	priorityMap := s.set.data.(*priorityMap[T, emptyType])
+	top, exists := priorityMap.TryPeek()
+	return top.Key, exists
 }

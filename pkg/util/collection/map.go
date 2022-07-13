@@ -16,9 +16,9 @@ type Map[K any, V any] interface {
 	Collection[Pair[K, V]]
 
 	ContainsKey(key K) bool
-	Put(key K, value V) (old V, existing bool)
-	Get(key K) (value V, existing bool)
-	Remove(key K) (old V, existing bool)
+	Put(key K, value V) (old V, exists bool)
+	Get(key K) (value V, exists bool)
+	Remove(key K) (old V, exists bool)
 }
 
 func NewMap[K any, V any, C comparable](hasher Hasher[K, C], equaler Equaler[K]) Map[K, V] {
@@ -69,19 +69,19 @@ func (m *mapImpl[K, V, C]) Has(pair Pair[K, V]) bool {
 	return m.ContainsKey(pair.Key)
 }
 
-func (m *mapImpl[K, V, C]) Pop() (pair Pair[K, V], existing bool) {
+func (m *mapImpl[K, V, C]) TryPop() (pair Pair[K, V], exists bool) {
 	for _, pairs := range m.data {
 		pair = *pairs[len(pairs)-1]
 		m.Remove(pair.Key)
-		existing = true
+		exists = true
 		return
 	}
 
-	existing = false
+	exists = false
 	return
 }
 
-func (m *mapImpl[K, V, C]) Put(key K, value V) (old V, existing bool) {
+func (m *mapImpl[K, V, C]) Put(key K, value V) (old V, exists bool) {
 	hash := m.hasher(key)
 	pairs, exists := m.data[hash]
 	if exists {
@@ -99,7 +99,7 @@ func (m *mapImpl[K, V, C]) Put(key K, value V) (old V, existing bool) {
 		})
 		m.data[hash] = pairs
 		m.size += 1
-		existing = false
+		exists = false
 		return
 	} else {
 		m.data[hash] = []*Pair[K, V]{{
@@ -107,15 +107,15 @@ func (m *mapImpl[K, V, C]) Put(key K, value V) (old V, existing bool) {
 			Value: value,
 		}}
 		m.size += 1
-		existing = false
+		exists = false
 		return
 	}
 }
 
-func (m *mapImpl[K, V, C]) Get(key K) (value V, existing bool) {
+func (m *mapImpl[K, V, C]) Get(key K) (value V, exists bool) {
 	hash := m.hasher(key)
-	pairs, existing := m.data[hash]
-	if !existing {
+	pairs, exists := m.data[hash]
+	if !exists {
 		return
 	}
 
@@ -124,7 +124,7 @@ func (m *mapImpl[K, V, C]) Get(key K) (value V, existing bool) {
 			return pair.Value, true
 		}
 	}
-	existing = false
+	exists = false
 	return
 }
 
@@ -133,16 +133,16 @@ func (m *mapImpl[K, V, C]) Len() int {
 }
 
 func (m *mapImpl[K, V, C]) ContainsKey(key K) bool {
-	_, existing := m.Get(key)
-	return existing
+	_, exists := m.Get(key)
+	return exists
 }
 
-func (m *mapImpl[K, V, C]) Remove(key K) (old V, existing bool) {
+func (m *mapImpl[K, V, C]) Remove(key K) (old V, exists bool) {
 	hash := m.hasher(key)
-	pairs, existing := m.data[hash]
+	pairs, exists := m.data[hash]
 
-	if !existing {
-		existing = false
+	if !exists {
+		exists = false
 		return
 	}
 
@@ -160,7 +160,7 @@ func (m *mapImpl[K, V, C]) Remove(key K) (old V, existing bool) {
 		}
 	}
 
-	existing = false
+	exists = false
 	return
 }
 

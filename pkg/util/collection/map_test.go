@@ -36,58 +36,58 @@ func testBasicTypesForMap[T comparable](mapType mapType, convert fromInt[T]) {
 			mapForTest = createMap[T, T, T](mapType, basicHasher[T], basicEquator[T], fakeComparator[T])
 		})
 
-		It("returns 'existing=false' when the Key is nonexistent.", func() {
-			_, existing := mapForTest.Get(convert(0))
-			Expect(existing).To(BeFalse())
+		It("returns 'exists=false' when the Key is nonexistent.", func() {
+			_, exists := mapForTest.Get(convert(0))
+			Expect(exists).To(BeFalse())
 
 			mapForTest.Put(convert(1), convert(2))
-			_, existing = mapForTest.Get(convert(0))
-			Expect(existing).To(BeFalse())
+			_, exists = mapForTest.Get(convert(0))
+			Expect(exists).To(BeFalse())
 		})
 
 		It("can get what it puts.", func() {
 			mapForTest.Put(convert(1), convert(2))
-			value, existing := mapForTest.Get(convert(1))
+			value, exists := mapForTest.Get(convert(1))
 			Expect(value).To(Equal(convert(2)))
-			Expect(existing).To(BeTrue())
+			Expect(exists).To(BeTrue())
 
 			// If there are multiple keys, won't get a wrong Value
 			mapForTest.Put(convert(0), convert(0))
-			value, existing = mapForTest.Get(convert(1))
+			value, exists = mapForTest.Get(convert(1))
 			Expect(value).To(Equal(convert(2)))
-			Expect(existing).To(BeTrue())
+			Expect(exists).To(BeTrue())
 		})
 
 		It("can overwrite what it puts.", func() {
 			mapForTest.Put(convert(1), convert(0))
 			mapForTest.Put(convert(1), convert(3))
-			value, existing := mapForTest.Get(convert(1))
+			value, exists := mapForTest.Get(convert(1))
 			Expect(value).To(Equal(convert(3)))
-			Expect(existing).To(BeTrue())
+			Expect(exists).To(BeTrue())
 		})
 
 		It("can indicate if the Key is already existent when it puts. If so, it returns the old Value.", func() {
 			mapForTest.Put(convert(1), convert(0))
-			oldValue, existing := mapForTest.Put(convert(1), convert(1))
+			oldValue, exists := mapForTest.Put(convert(1), convert(1))
 			Expect(oldValue).To(Equal(convert(0)))
-			Expect(existing).To(BeTrue())
+			Expect(exists).To(BeTrue())
 
-			_, existing = mapForTest.Put(convert(0), convert(3))
-			Expect(existing).To(BeFalse())
+			_, exists = mapForTest.Put(convert(0), convert(3))
+			Expect(exists).To(BeFalse())
 		})
 
 		It("can remove what it puts.", func() {
 			mapForTest.Put(convert(0), convert(2))
-			_, existing := mapForTest.Remove(convert(2))
-			Expect(existing).To(BeFalse())
-			value, existing := mapForTest.Remove(convert(0))
-			Expect(existing).To(BeTrue())
+			_, exists := mapForTest.Remove(convert(2))
+			Expect(exists).To(BeFalse())
+			value, exists := mapForTest.Remove(convert(0))
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(convert(2)))
 
 			mapForTest.Put(convert(1), convert(0))
 			mapForTest.Put(convert(1), convert(3))
-			value, existing = mapForTest.Remove(convert(1))
-			Expect(existing).To(BeTrue())
+			value, exists = mapForTest.Remove(convert(1))
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(convert(3)))
 		})
 
@@ -224,13 +224,13 @@ func testMap(mapType mapType) {
 			mapForTest.Put(t2, 1)
 
 			Expect(mapForTest.ContainsKey(t1)).To(BeTrue())
-			value, existing := mapForTest.Get(t1)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Get(t1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(0))
 
 			Expect(mapForTest.ContainsKey(t2)).To(BeTrue())
-			value, existing = mapForTest.Get(t2)
-			Expect(existing).To(BeTrue())
+			value, exists = mapForTest.Get(t2)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 		})
 
@@ -241,13 +241,13 @@ func testMap(mapType mapType) {
 			mapForTest.Put(t2, 1)
 
 			Expect(mapForTest.ContainsKey(t1)).To(BeTrue())
-			value, existing := mapForTest.Get(t1)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Get(t1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(0))
 
 			Expect(mapForTest.ContainsKey(t2)).To(BeTrue())
-			value, existing = mapForTest.Get(t2)
-			Expect(existing).To(BeTrue())
+			value, exists = mapForTest.Get(t2)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 		})
 
@@ -266,30 +266,30 @@ func testMap(mapType mapType) {
 		It("can overwrite what it puts.", func() {
 			t1 := &idValue{id: 1, value: 1}
 			t2 := &idValue{id: 1, value: 1}
-			_, existing := mapForTest.Put(t1, 0)
-			Expect(existing).To(BeFalse())
+			_, exists := mapForTest.Put(t1, 0)
+			Expect(exists).To(BeFalse())
 
-			old, existing := mapForTest.Put(t1, 1)
-			Expect(existing).To(BeTrue())
+			old, exists := mapForTest.Put(t1, 1)
+			Expect(exists).To(BeTrue())
 			Expect(old).To(Equal(0))
 
-			value, existing := mapForTest.Get(t1)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Get(t1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 
-			old, existing = mapForTest.Put(t2, 2)
-			Expect(existing).To(BeTrue())
+			old, exists = mapForTest.Put(t2, 2)
+			Expect(exists).To(BeTrue())
 			Expect(old).To(Equal(1))
 
-			value, existing = mapForTest.Get(t1)
-			Expect(existing).To(BeTrue())
+			value, exists = mapForTest.Get(t1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(2))
 		})
 
 		It("won't panic when trying to remove an nonexistent Key.", func() {
 			t1 := &idValue{id: 1, value: 1}
-			_, existing := mapForTest.Remove(t1)
-			Expect(existing).To(BeFalse())
+			_, exists := mapForTest.Remove(t1)
+			Expect(exists).To(BeFalse())
 		})
 
 		It("can remove what it puts when the keys' hash codes are different.", func() {
@@ -298,12 +298,12 @@ func testMap(mapType mapType) {
 			mapForTest.Put(t1, 0)
 			mapForTest.Put(t2, 1)
 
-			old, existing := mapForTest.Remove(t1)
-			Expect(existing).To(BeTrue())
+			old, exists := mapForTest.Remove(t1)
+			Expect(exists).To(BeTrue())
 			Expect(old).To(Equal(0))
 
-			value, existing := mapForTest.Remove(t2)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Remove(t2)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 		})
 
@@ -313,12 +313,12 @@ func testMap(mapType mapType) {
 			mapForTest.Put(t1, 0)
 			mapForTest.Put(t2, 1)
 
-			old, existing := mapForTest.Remove(t1)
-			Expect(existing).To(BeTrue())
+			old, exists := mapForTest.Remove(t1)
+			Expect(exists).To(BeTrue())
 			Expect(old).To(Equal(0))
 
-			value, existing := mapForTest.Remove(t2)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Remove(t2)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 		})
 
@@ -366,16 +366,16 @@ func testMap(mapType mapType) {
 			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Has(p)).To(BeTrue())
-			value, existing := mapForTest.Get(1)
-			Expect(existing).To(BeTrue())
+			value, exists := mapForTest.Get(1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(2))
 
 			// overwrite
 			p = Pair[int, int]{Key: 1, Value: 1}
 			collectionForTest.Add(p)
 			Expect(collectionForTest.Has(p)).To(BeTrue())
-			value, existing = mapForTest.Get(1)
-			Expect(existing).To(BeTrue())
+			value, exists = mapForTest.Get(1)
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(1))
 		})
 
@@ -389,30 +389,30 @@ func testMap(mapType mapType) {
 			collectionForTest.RemoveFirst(p)
 		})
 
-		It("can pop items.", func() {
+		It("can try to pop items.", func() {
 			p := Pair[int, int]{Key: 1, Value: 2}
 			collectionForTest.Add(p)
-			pair, existing := collectionForTest.Pop()
-			Expect(existing).To(BeTrue())
+			pair, exists := collectionForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(pair.Key).To(Equal(1))
 			Expect(pair.Value).To(Equal(2))
-			pair, existing = collectionForTest.Pop()
-			Expect(existing).To(BeFalse())
+			pair, exists = collectionForTest.TryPop()
+			Expect(exists).To(BeFalse())
 
 			// Work with multiple items
 			collectionForTest.Add(p)
 			p = Pair[int, int]{Key: 2, Value: 2}
 			collectionForTest.Add(p)
-			pair, existing = collectionForTest.Pop()
-			Expect(existing).To(BeTrue())
+			pair, exists = collectionForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(pair.Key).To(Or(Equal(1), Equal(2)))
 			Expect(pair.Value).To(Equal(2))
-			pair, existing = collectionForTest.Pop()
-			Expect(existing).To(BeTrue())
+			pair, exists = collectionForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(pair.Key).To(Or(Equal(1), Equal(2)))
 			Expect(pair.Value).To(Equal(2))
-			pair, existing = collectionForTest.Pop()
-			Expect(existing).To(BeFalse())
+			pair, exists = collectionForTest.TryPop()
+			Expect(exists).To(BeFalse())
 		})
 
 		It("can return the number of items it contains.", func() {
@@ -434,7 +434,7 @@ func testMap(mapType mapType) {
 			collectionForTest.RemoveFirst(p)
 			Expect(collectionForTest.Len()).To(Equal(1))
 
-			collectionForTest.Pop()
+			collectionForTest.TryPop()
 			Expect(collectionForTest.Len()).To(Equal(0))
 		})
 	})

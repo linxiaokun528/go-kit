@@ -98,7 +98,7 @@ func (d *DelayingExecutor) waitingLoop() {
 				break
 			}
 
-			entry, _ = d.priorityQueue.Pop()
+			entry, _ = d.priorityQueue.TryPop()
 			go d.executeIgnorePanic(entry.function)
 		}
 
@@ -144,7 +144,7 @@ func (d *DelayingExecutor) waitingLoop() {
 }
 
 func (d *DelayingExecutor) drainPriorityQueue() {
-	for entry, existing := d.priorityQueue.Pop(); existing; entry, existing = d.priorityQueue.Pop() {
+	for entry, exists := d.priorityQueue.TryPop(); exists; entry, exists = d.priorityQueue.TryPop() {
 		nextReadyAtTimer := d.clock.NewTimer(entry.readyAt.Sub(time.Now()))
 		select {
 		case <-nextReadyAtTimer.C():

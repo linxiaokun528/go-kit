@@ -3,6 +3,7 @@ package collection_test
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -54,26 +55,26 @@ func testBasicTypesForSet[T comparable](setType setType, convert fromInt[T]) {
 			Expect(setForTest.ToArray()).To(BeEmpty())
 		})
 
-		It("can pop items.", func() {
-			_, existing := setForTest.Pop()
-			Expect(existing).To(BeFalse())
+		It("can try to pop items.", func() {
+			_, exists := setForTest.TryPop()
+			Expect(exists).To(BeFalse())
 
 			setForTest.Add(convert(0))
-			value, existing := setForTest.Pop()
-			Expect(existing).To(BeTrue())
+			value, exists := setForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Equal(convert(0)))
 
 			// Work with multiple items
 			setForTest.Add(convert(0))
 			setForTest.Add(convert(1))
-			value, existing = setForTest.Pop()
-			Expect(existing).To(BeTrue())
+			value, exists = setForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Or(Equal(convert(1)), Equal(convert(0))))
-			value, existing = setForTest.Pop()
-			Expect(existing).To(BeTrue())
+			value, exists = setForTest.TryPop()
+			Expect(exists).To(BeTrue())
 			Expect(value).To(Or(Equal(convert(1)), Equal(convert(0))))
-			value, existing = setForTest.Pop()
-			Expect(existing).To(BeFalse())
+			value, exists = setForTest.TryPop()
+			Expect(exists).To(BeFalse())
 		})
 
 		It("can return the number of items it contains.", func() {
@@ -89,11 +90,11 @@ func testBasicTypesForSet[T comparable](setType setType, convert fromInt[T]) {
 			Expect(setForTest.Len()).To(Equal(1))
 			setForTest.Add(convert(0))
 			Expect(setForTest.Len()).To(Equal(2))
-			setForTest.Pop()
+			setForTest.TryPop()
 			Expect(setForTest.Len()).To(Equal(1))
-			setForTest.Pop()
+			setForTest.TryPop()
 			Expect(setForTest.Len()).To(Equal(0))
-			setForTest.Pop()
+			setForTest.TryPop()
 			Expect(setForTest.Len()).To(Equal(0))
 		})
 
@@ -254,4 +255,42 @@ var _ = Describe("Default set", func() {
 
 var _ = Describe("ThreadSafeSet", func() {
 	testSet(threadSafeSet)
+
+	var concurrentLevel int
+	var setForTest Set[int]
+
+	BeforeEach(func() {
+		concurrentLevel = 30
+		setForTest = NewThreadSafeSet[int, int](basicHasher[int], basicEquator[int])
+	})
+
+	It("can add items concurrently", func() {
+		for i := 0; i < concurrentLevel; i++ {
+			tmp := i
+			go func() {
+				setForTest.Add(tmp)
+			}()
+		}
+
+		Eventually(setForTest.Len).Should(Equal(concurrentLevel))
+
+		Expect(setForTest.Len()).To(Equal(concurrentLevel))
+		data := setForTest.ToArray()
+		sort.Ints(data)
+		for i, datum := range data {
+			Expect(datum).To(Equal(i))
+		}
+	})
+
+	It("can pop items concurrently", func() {
+		for i := 0; i < concurrentLevel; i++ {
+			setForTest.Add(i)
+		}
+
+		for i := 0; i < concurrentLevel; i++ {
+			go setForTest.TryPop()
+		}
+
+		Eventually(setForTest.Len).Should(Equal(0))
+	})
 })

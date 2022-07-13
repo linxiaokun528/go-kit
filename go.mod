@@ -1,4 +1,4 @@
-module go-kit
+module github.com/linxiaokun528/go-kit
 
 go 1.18
 
