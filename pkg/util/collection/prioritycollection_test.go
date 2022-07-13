@@ -274,6 +274,21 @@ var _ = Describe("PriorityCollection should be tested multiple times.", func() {
 				priorityQueue.Clear()
 				Expect(priorityQueue.Len()).To(Equal(0))
 			})
+
+			It("can return what it puts into an array.", func() {
+				Expect(priorityQueue.ToArray()).To(BeEmpty())
+
+				priorityQueue.Add(1)
+				priorityQueue.Add(2)
+				Expect(priorityQueue.ToArray()).To(ConsistOf(1, 2))
+
+				priorityQueue.RemoveFirst(1)
+				Expect(priorityQueue.ToArray()).To(ConsistOf(2))
+				priorityQueue.RemoveFirst(2)
+				Expect(priorityQueue.ToArray()).To(BeEmpty())
+				priorityQueue.RemoveFirst(2)
+				Expect(priorityQueue.ToArray()).To(BeEmpty())
+			})
 		})
 	})
 

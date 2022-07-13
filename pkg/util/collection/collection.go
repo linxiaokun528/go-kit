@@ -10,6 +10,7 @@ type Collection[T any] interface {
 	Has(item T) bool
 	Len() int
 	Clear()
+	ToArray() []T // The order will not be guaranteed
 }
 
 //type EnhancedCollection[T any] struct {

@@ -39,6 +39,21 @@ func testBasicTypesForSet[T comparable](setType setType, convert fromInt[T]) {
 			Expect(setForTest.RemoveFirst(convert(1))).To(BeFalse())
 		})
 
+		It("can return what it adds into an array.", func() {
+			Expect(setForTest.ToArray()).To(BeEmpty())
+
+			setForTest.Add(convert(0))
+			setForTest.Add(convert(1))
+			Expect(setForTest.ToArray()).To(ConsistOf(convert(0), convert(1)))
+
+			setForTest.RemoveFirst(convert(0))
+			Expect(setForTest.ToArray()).To(ConsistOf(convert(1)))
+			setForTest.RemoveFirst(convert(1))
+			Expect(setForTest.ToArray()).To(BeEmpty())
+			setForTest.RemoveFirst(convert(1))
+			Expect(setForTest.ToArray()).To(BeEmpty())
+		})
+
 		It("can pop items.", func() {
 			_, existing := setForTest.Pop()
 			Expect(existing).To(BeFalse())

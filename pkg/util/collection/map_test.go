@@ -102,6 +102,23 @@ func testBasicTypesForMap[T comparable](mapType mapType, convert fromInt[T]) {
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
 		})
 
+		It("can return what it puts into an array.", func() {
+			Expect(mapForTest.ToArray()).To(BeEmpty())
+
+			pair1 := Pair[T, T]{Key: convert(0), Value: convert(2)}
+			pair2 := Pair[T, T]{Key: convert(1), Value: convert(0)}
+			mapForTest.Add(pair1)
+			mapForTest.Add(pair2)
+			Expect(mapForTest.ToArray()).To(ConsistOf(pair1, pair2))
+
+			mapForTest.RemoveFirst(pair1)
+			Expect(mapForTest.ToArray()).To(ConsistOf(pair2))
+			mapForTest.RemoveFirst(pair2)
+			Expect(mapForTest.ToArray()).To(BeEmpty())
+			mapForTest.RemoveFirst(pair2)
+			Expect(mapForTest.ToArray()).To(BeEmpty())
+		})
+
 		It("can show if it contains a specified Key.", func() {
 			Expect(mapForTest.ContainsKey(convert(1))).To(BeFalse())
 			mapForTest.Put(convert(1), convert(2))

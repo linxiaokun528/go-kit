@@ -28,6 +28,15 @@ type set[T any] struct {
 	data Map[T, emptyType]
 }
 
+func (s *set[T]) ToArray() []T {
+	result := make([]T, s.Len())
+	for i, pair := range s.data.ToArray() {
+		result[i] = pair.Key
+	}
+
+	return result
+}
+
 func (s *set[T]) Add(item T) (oldItem T, replaced bool) {
 	_, replaced = s.data.Put(item, empty)
 	if !replaced {
@@ -65,6 +74,13 @@ func (s *set[T]) Clear() {
 type threadSafeSet[T any] struct {
 	s Set[T]
 	l sync.RWMutex
+}
+
+func (t *threadSafeSet[T]) ToArray() []T {
+	t.l.RLock()
+	defer t.l.RUnlock()
+
+	return t.s.ToArray()
 }
 
 func (t *threadSafeSet[T]) Add(item T) (oldItem T, replaced bool) {

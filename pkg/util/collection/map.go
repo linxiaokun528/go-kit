@@ -37,6 +37,18 @@ type mapImpl[K any, V any, C comparable] struct {
 	size    int
 }
 
+func (m *mapImpl[K, V, C]) ToArray() []Pair[K, V] {
+	result := make([]Pair[K, V], m.Len())
+	i := 0
+	for _, pairs := range m.data {
+		for _, pair := range pairs {
+			result[i] = *pair
+			i++
+		}
+	}
+	return result
+}
+
 func (m *mapImpl[K, V, C]) Add(pair Pair[K, V]) (oldItem Pair[K, V], replaced bool) {
 	oldValue, replaced := m.Put(pair.Key, pair.Value)
 	if replaced {

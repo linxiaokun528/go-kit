@@ -190,6 +190,13 @@ func (p *producer) produce(ctx context.Context) int {
 	return p.invokedTimes
 }
 
+func (p *producer) GetInvokedTimes() int {
+	defer p.locker.Unlock()
+	p.locker.Lock()
+
+	return p.invokedTimes
+}
+
 func newProducer(expectedInvokedTime int, cancelFunc context.CancelFunc) *producer {
 	return &producer{
 		invokedTimes:        0,
@@ -217,10 +224,7 @@ func (c *consumer) consume(product int, ctx context.Context) {
 }
 
 func (c *consumer) getResults() []int {
-	var results []int
-	for value, existing := c.results.Pop(); existing; value, existing = c.results.Pop() {
-		results = append(results, value)
-	}
+	results := c.results.ToArray()
 	sort.Ints(results)
 	return results
 }
@@ -276,9 +280,20 @@ var _ = Describe("ParallelConsumingProcessor", func() {
 			}
 			consumerFunc(product, ctx)
 		}, doNothingHandler)
-		defer cancelFunc()
-		go processor.Start(10, ctx)
-		Eventually(func() uint32 { return atomic.LoadUint32(&invoked) }).Should(BeNumerically(">", 0))
+
+		// Don't simply use`go processor.Start(10, ctx)`, because a backend routine may still running after
+		// this function ends and thus affect other test cases.
+		stopCh := make(chan bool)
+		go func() {
+			processor.Start(10, ctx)
+			close(stopCh)
+		}()
+
+		func() {
+			defer cancelFunc()
+			Eventually(func() uint32 { return atomic.LoadUint32(&invoked) }).Should(BeNumerically(">", 0))
+		}()
+		<-stopCh
 	})
 
 	Describe("stops working when ctx is done.", func() {
@@ -286,11 +301,11 @@ var _ = Describe("ParallelConsumingProcessor", func() {
 			processor := util.NewParallelConsumingProcessor[int](producerFunc, consumerFunc, doNothingHandler)
 			cancelFunc()
 			processor.Start(10, ctx)
-			Expect(producer.invokedTimes).To(BeZero())
+			Expect(producer.GetInvokedTimes()).To(BeZero())
 			Expect(consumer.getResults()).To(BeEmpty())
 		})
 
-		It("If producers and consumers is already working, done ctx can stopped the processor.", func() {
+		It("If producers and consumers is already working, done ctx can stop the processor.", func() {
 			processor := util.NewParallelConsumingProcessor[int](producerFunc, consumerFunc, doNothingHandler)
 
 			stopCh := make(chan bool)
@@ -298,11 +313,12 @@ var _ = Describe("ParallelConsumingProcessor", func() {
 				processor.Start(10, ctx)
 				close(stopCh)
 			}()
-			Eventually(consumer.results.Len()).Should(Equal(0))
+
+			Eventually(consumer.results.Len).ShouldNot(Equal(0))
 			cancelFunc()
 			Eventually(stopCh).Should(BeClosed())
 			values := consumer.getResults()
-			Consistently(consumer.getResults()).Should(Equal(values))
+			Consistently(consumer.getResults).Should(Equal(values))
 		})
 	})
 

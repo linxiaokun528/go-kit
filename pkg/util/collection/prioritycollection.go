@@ -105,6 +105,14 @@ type priorityQueue[T any] struct {
 	equaler Equaler[T]
 }
 
+func (pq *priorityQueue[T]) ToArray() []T {
+	result := make([]T, pq.Len())
+	for i, entry := range pq.helper.entries {
+		result[i] = entry.key
+	}
+	return result
+}
+
 func (pq *priorityQueue[T]) Has(item T) bool {
 	for _, entry := range pq.helper.entries {
 		if pq.equaler(item, entry.key) {
@@ -247,6 +255,15 @@ func (p *priorityMap[K, V]) RemoveFirst(item Pair[K, V]) bool {
 	return exsiting
 }
 
+func (p *priorityMap[K, V]) ToArray() []Pair[K, V] {
+	result := make([]Pair[K, V], p.Len())
+	for i, entry := range p.helper.entries {
+		result[i].Key = entry.key
+		result[i].Value = entry.value
+	}
+	return result
+}
+
 func (pq *priorityMap[K, V]) Clear() {
 	pq.helper.entries = []*priorityHelperEntry[K, V]{}
 	pq.knownEntries.Clear()
@@ -254,6 +271,10 @@ func (pq *priorityMap[K, V]) Clear() {
 
 type prioritySet[T any] struct {
 	set[T]
+}
+
+func (s *prioritySet[T]) ToArray() []T {
+	return s.set.ToArray()
 }
 
 func (s *prioritySet[T]) Peek() T {
