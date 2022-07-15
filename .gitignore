@@ -19,5 +19,4 @@
 
 # Files and directories in the project itself
 main
-go.sum
 **/1
