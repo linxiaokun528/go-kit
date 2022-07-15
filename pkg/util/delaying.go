@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go-kit/pkg/util/collection"
+	"github.com/linxiaokun528/go-kit/pkg/util/collection"
 	"k8s.io/utils/clock"
 )
 

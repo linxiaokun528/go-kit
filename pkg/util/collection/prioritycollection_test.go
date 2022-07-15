@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "go-kit/pkg/util/collection"
+	. "github.com/linxiaokun528/go-kit/pkg/util/collection"
 )
 
 func intAscComparator(first, second int) bool {

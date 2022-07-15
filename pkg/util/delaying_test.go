@@ -3,9 +3,9 @@ package util_test
 import (
 	"time"
 
+	"github.com/linxiaokun528/go-kit/pkg/util"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go-kit/pkg/util"
 )
 
 type delayingHelper struct {

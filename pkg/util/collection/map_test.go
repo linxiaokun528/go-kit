@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strconv"
 
+	. "github.com/linxiaokun528/go-kit/pkg/util/collection"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "go-kit/pkg/util/collection"
 )
 
 func basicHasher[K comparable](value K) K {
